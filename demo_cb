@@ -1,0 +1,55 @@
+import gensim
+import csv
+import jieba
+import jieba.posseg as pseg
+import jieba.analyse
+import heapq
+csv_reader=csv.reader(open("co.csv",encoding="UTF-8"))
+model=gensim.models.Word2Vec.load('E:/词向量/天翊/scratches/new.text.model')#引入模型
+
+stopwords=[line.strip() for line in open('stop.txt', 'r', encoding='utf-8').readlines()]
+
+csv_reader2=csv.reader(open("co.csv",encoding="UTF-8"))
+word= [ s[4] for s in csv_reader]
+poi=  [ c[0] for c in csv_reader2]
+poi=poi[1:]
+word=word[1:]
+list_len=len(word)
+
+list_w=[]
+
+list_poi_value=[]
+for i in range(list_len+1):
+    list_w.append([])
+    list_poi_value.append([0])
+count=1
+for intro in word:
+ try:
+    words=pseg.cut(intro)#分词
+ except:
+    list_w[count].append("no_keywords")
+
+ else:
+    for n,flag in words:
+        if(flag=='n')&(n not in stopwords):
+         list_w[count].append(n)
+ count = count + 1
+
+person_label='地貌奇观'#兴趣标签
+list_w=list_w[1:]
+#list_w[i] 序号为i的poi标签list
+#计算得分
+for poi_count in range(len(list_w)):
+   for poi_label in list_w[poi_count]:# poi_count 个景点
+         try:
+            if(poi_label in model):
+
+               list_poi_value[poi_count]=list_poi_value[poi_count]+model.similarity(poi_label,person_label)
+         except:
+                 list_poi_value[poi_count]=list_poi_value[poi_count]+0
+
+topn=10#rank10
+max_value=heapq.nlargest(topn,list_poi_value)
+
+for cnt in max_value:
+    print (poi[list_poi_value.index(cnt)])
